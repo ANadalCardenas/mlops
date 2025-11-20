@@ -37,8 +37,8 @@ def train_model(config):
     
     my_dataset = MyDataset(config["images_path"], config["labels_path"])
     dataloader = DataLoader(my_dataset, batch_size=config['batch_size'])
+    my_model = MyModel(config['features'], config['hidden_layers'], config['outputs']).to(device)
     """
-    my_model = MyModel(config['features'], hidden, outputs).to(device)
     criterion = nn.MSELoss()
     optimizer = optim.SGD(my_model.parameters(), lr=args.lr)
     for epoch in range(config["epochs"]):
@@ -47,6 +47,7 @@ def train_model(config):
 
     return my_model
     """
+    
 
 
 if __name__ == "__main__":
@@ -55,6 +56,9 @@ if __name__ == "__main__":
         "epochs": 5,
         "batch_size": 10,
         "images_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/data/data/",
-        "labels_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/chinese_mnist.csv"
+        "labels_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/chinese_mnist.csv",
+        "features" : 4096,
+        "hidden_layers": 64,
+        "outputs": 15
     }
     train_model(config)
