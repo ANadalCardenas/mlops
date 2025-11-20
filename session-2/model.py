@@ -11,6 +11,7 @@ class MyModel(nn.Module):
         self.fc3 = nn.Linear(n_hidden, n_outputs)
     
     def forward(self, x):
+        x = x.view(x.size(0), -1)
         x = self.act1(self.fc1(x))
         x = self.act2(self.fc2(x))
         return self.fc3(x)
