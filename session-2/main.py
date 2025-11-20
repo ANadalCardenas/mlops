@@ -13,8 +13,7 @@ from torchvision import transforms
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 
-def train_single_epoch(my_model, epoch,  dataloader, criterion, optimizer, num_epochs):
-    print(f"Epoch {epoch+1}/{num_epochs}")
+def train_single_epoch(my_model, dataloader, criterion, optimizer):
     for x, y in dataloader:
         optimizer.zero_grad()
         x, y = x.to(device), y.to(device)        
@@ -24,8 +23,7 @@ def train_single_epoch(my_model, epoch,  dataloader, criterion, optimizer, num_e
         optimizer.step()
 
 
-def eval_single_epoch(my_model, epoch,  dataloader, criterion, num_epochs):
-    print(f"Epoch {epoch+1}/{num_epochs}")
+def eval_single_epoch(my_model,  dataloader):
     correct = 0
     total = 0
     for x, y in dataloader:
@@ -42,14 +40,15 @@ def train_model(config):
     # Convert an image to a tensor
     transform = transforms.Compose([transforms.Grayscale(),transforms.ToTensor()])
     my_dataset = MyDataset(config["images_path"], config["labels_path"], transform=transform)
-    dataloader = DataLoader(my_dataset, batch_size=config['batch_size'])
+    dataloader = DataLoader(my_dataset, batch_size=config['batch_size'], shuffle = True)
     my_model = MyModel(config['features'], config['hidden_layers'], config['outputs']).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(my_model.parameters(), config["lr"])
     for epoch in range(config["epochs"]):
-        train_single_epoch(my_model, epoch,  dataloader, criterion, optimizer, config['epochs'])
+        print(f"Epoch {epoch+1}/{config['epochs']}")
+        train_single_epoch(my_model, dataloader, criterion, optimizer)
         with torch.no_grad():
-            eval_single_epoch(my_model, epoch,  dataloader, criterion, config['epochs'])
+            print(eval_single_epoch(my_model, dataloader))
 
     return my_model
     
