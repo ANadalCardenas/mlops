@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-
+"""
 
 def train_single_epoch(my_model, epoch,  dataloader, criterion, optimizer):
     print(f"Epoch {epoch+1}/{config["epochs"]}")
@@ -32,11 +32,12 @@ def eval_single_epoch(my_model, epoch,  dataloader, criterion):
         loss = criterion(y_, y)
         loss.backward()
 
-
+"""
 def train_model(config):
     
-    my_dataset = MyDataset()
+    my_dataset = MyDataset(config["images_path"], config["labels_path"])
     dataloader = DataLoader(my_dataset, batch_size=config['batch_size'])
+    """
     my_model = MyModel(config['features'], hidden, outputs).to(device)
     criterion = nn.MSELoss()
     optimizer = optim.SGD(my_model.parameters(), lr=args.lr)
@@ -45,6 +46,7 @@ def train_model(config):
         eval_single_epoch(my_model, epoch,  dataloader, criterion)
 
     return my_model
+    """
 
 
 if __name__ == "__main__":
@@ -52,5 +54,7 @@ if __name__ == "__main__":
     config = {
         "epochs": 5,
         "batch_size": 10,
+        "images_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/data/data/",
+        "labels_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/chinese_mnist.csv"
     }
     train_model(config)
