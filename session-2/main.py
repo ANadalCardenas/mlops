@@ -30,9 +30,10 @@ def eval_single_epoch(my_model,  dataloader):
     for x, y in dataloader:
         x, y = x.to(device), y.to(device)
         y_ = my_model(x)
-        preds = torch.argmax(y_, dim=1)
-        correct += (preds == y).sum().item()
-        total += y.size(0)
+        batch_acc = accuracy(y_, y)
+        batch_size = x.size(0)
+        total_correct += batch_acc * batch_size
+        total_samples += batch_size
     accuracy = correct / total
     return  accuracy
 
