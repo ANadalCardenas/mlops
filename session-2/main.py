@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from torch.utils.data import random_split
 
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -40,15 +41,23 @@ def train_model(config):
     # Convert an image to a tensor
     transform = transforms.Compose([transforms.Grayscale(),transforms.ToTensor()])
     my_dataset = MyDataset(config["images_path"], config["labels_path"], transform=transform)
-    dataloader = DataLoader(my_dataset, batch_size=config['batch_size'], shuffle = True)
+    # Split the dataset
+    total_size = len(my_dataset)
+    train_size = int(config['size_train'] * total_size)
+    val_size   = int(config['size_eval'] * total_size)
+    train_data, val_data = random_split(my_dataset,[train_size, val_size],generator=torch.Generator().manual_seed(42))
+    # Define the dataloaders
+    train_loader = DataLoader(train_data,batch_size=config['batch_size'], shuffle=True)
+    val_loader   = DataLoader(val_data, batch_size=config['batch_size'], shuffle=False)
+    # Define model
     my_model = MyModel(config['features'], config['hidden_layers'], config['outputs']).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(my_model.parameters(), config["lr"])
     for epoch in range(config["epochs"]):
         print(f"Epoch {epoch+1}/{config['epochs']}")
-        train_single_epoch(my_model, dataloader, criterion, optimizer)
+        train_single_epoch(my_model, train_loader, criterion, optimizer)
         with torch.no_grad():
-            print(eval_single_epoch(my_model, dataloader))
+            print(f"Acuracy: {eval_single_epoch(my_model, val_loader)}")
 
     return my_model
     
@@ -65,7 +74,8 @@ if __name__ == "__main__":
         "features" : 4096,
         "hidden_layers": 64,
         "outputs": 15,
-        "lr" : 0.1
-
-    }
+        "lr" : 0.1,
+        "size_train" : 0.75,
+        "size_eval" : 0.25
+        }
     train_model(config)
