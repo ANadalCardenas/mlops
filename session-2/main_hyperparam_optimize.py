@@ -22,7 +22,7 @@ def train_single_epoch(my_model, trainloader, criterion, optimizer, device):
         optimizer.step()
 
 
-def eval_single_epoch(my_model,  val_loader, device):
+def eval_single_epoch(my_model,  val_loader, device = "cpu"):
     correct = 0
     total = 0
     for i, data in enumerate(val_loader, 0):
@@ -69,7 +69,7 @@ def train_model(config, train_dataset, val_dataset):
         print(f"Epoch {epoch+1}/{config['epochs']}")
         train_single_epoch(my_model, train_loader, criterion, optimizer, device)
         with torch.no_grad():
-            print(f"Acuracy: {eval_single_epoch(my_model, val_loader, device)}")
+            print(f"Acuracy: {eval_single_epoch(my_model, val_loader)}")
 
 
 
