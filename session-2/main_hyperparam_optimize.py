@@ -9,23 +9,24 @@ import torch.nn as nn
 import torch.optim as optim
 from utils import accuracy, save_model
 
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 
-def train_single_epoch(my_model, dataloader, criterion, optimizer):
-    for x, y in dataloader:
+def train_single_epoch(my_model, trainloader, criterion, optimizer):
+    for i, data in enumerate(trainloader, 0):
         optimizer.zero_grad()
-        x, y = x.to(device), y.to(device)        
+        x, y = data
+        x, y = x.to(device), y.to(device)     
         y_ = my_model(x)
         loss = criterion(y_, y)
         loss.backward()
         optimizer.step()
 
 
-def eval_single_epoch(my_model,  dataloader):
+def eval_single_epoch(my_model,  val_loader):
     correct = 0
     total = 0
-    for x, y in dataloader:
+    for i, data in enumerate(val_loader, 0):
+        x, y = data
         x, y = x.to(device), y.to(device)
         y_ = my_model(x)
         preds = torch.argmax(y_, dim=1)
@@ -52,7 +53,15 @@ def train_model(config, train_dataset, val_dataset):
     val_loader   = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
     
     # Model
-    my_model = MyModel(config['features'], config['hidden_layers'], config['outputs']).to(device)
+    my_model = MyModel(config['features'], config['hidden_layers'], config['outputs'])
+    # Parallels training:
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda:0"
+        if torch.cuda.device_count() > 1:
+            my_model = nn.DataParallel(my_model)
+    my_model.to(device)
+
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(my_model.parameters(), config["lr"])
 
