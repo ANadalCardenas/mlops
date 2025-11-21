@@ -11,7 +11,7 @@ from utils import accuracy, save_model
 
 
 
-def train_single_epoch(my_model, trainloader, criterion, optimizer):
+def train_single_epoch(my_model, trainloader, criterion, optimizer, device):
     for i, data in enumerate(trainloader, 0):
         optimizer.zero_grad()
         x, y = data
@@ -22,7 +22,7 @@ def train_single_epoch(my_model, trainloader, criterion, optimizer):
         optimizer.step()
 
 
-def eval_single_epoch(my_model,  val_loader):
+def eval_single_epoch(my_model,  val_loader, device):
     correct = 0
     total = 0
     for i, data in enumerate(val_loader, 0):
@@ -67,9 +67,9 @@ def train_model(config, train_dataset, val_dataset):
 
     for epoch in range(config["epochs"]):
         print(f"Epoch {epoch+1}/{config['epochs']}")
-        train_single_epoch(my_model, train_loader, criterion, optimizer)
+        train_single_epoch(my_model, train_loader, criterion, optimizer, device)
         with torch.no_grad():
-            print(f"Acuracy: {eval_single_epoch(my_model, val_loader)}")
+            print(f"Acuracy: {eval_single_epoch(my_model, val_loader, device)}")
 
 
 
