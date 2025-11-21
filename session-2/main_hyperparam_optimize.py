@@ -10,7 +10,6 @@ from torchvision import transforms
 from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
-from utils import accuracy, save_model
 from ray.train import Checkpoint, get_checkpoint
 from pathlib import Path
 import ray.cloudpickle as pickle
@@ -30,7 +29,7 @@ def load_datasets(config):
     train_ds, val_ds, test_ds = random_split(
         full_dataset,
         [train_size, val_size, test_size],
-        generator=torch.Generator().manual_seed(42)  # reproducible splits
+        generator=torch.Generator().manual_seed(42) 
     )
 
     return train_ds, val_ds, test_ds
@@ -137,14 +136,14 @@ if __name__ == "__main__":
 
 
     config = {
-        "epochs": tune.choice([10, 20, 30]),
-        "batch_size": tune.choice([32, 64]),
+        "epochs": tune.choice([100]),
+        "batch_size": tune.choice([64]),
         "images_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/data/data/",
         "labels_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/chinese_mnist.csv",
         "features" : 4096,
-        "hidden_layers": tune.choice([2 ** i for i in range(10)]),
+        "hidden_layers": tune.choice([2 ** i for i in range(9)]),
         "outputs": 15,
-        "lr" : tune.loguniform(1e-4, 1e-1),
+        "lr" : tune.loguniform(1e-2, 1e-1),
         "size_train" : 0.7,
         "size_eval" : 0.2
         }

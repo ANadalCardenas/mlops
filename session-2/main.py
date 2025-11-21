@@ -30,10 +30,9 @@ def eval_single_epoch(my_model,  dataloader):
     for x, y in dataloader:
         x, y = x.to(device), y.to(device)
         y_ = my_model(x)
-        batch_acc = accuracy(y_, y)
-        batch_size = x.size(0)
-        total_correct += batch_acc * batch_size
-        total_samples += batch_size
+        preds = torch.argmax(y_, dim=1)
+        correct += (preds == y).sum().item()
+        total += y.size(0)
     accuracy = correct / total
     return  accuracy
 
@@ -45,12 +44,12 @@ def train_model(config):
     # Split the dataset
     total_size = len(my_dataset)
     train_size = int(config['size_train'] * total_size)
-    val_size   = int(config['size_eval'] * total_size)
+    val_size   = int(config['size_eval'] * total_size) 
     train_data, val_data = random_split(my_dataset,[train_size, val_size],generator=torch.Generator().manual_seed(42))
     # Define the dataloaders
     train_loader = DataLoader(train_data,batch_size=config['batch_size'], shuffle=True)
     val_loader   = DataLoader(val_data, batch_size=config['batch_size'], shuffle=False)
-    # Define model
+    # Model
     my_model = MyModel(config['features'], config['hidden_layers'], config['outputs']).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(my_model.parameters(), config["lr"])
