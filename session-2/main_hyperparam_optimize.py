@@ -83,38 +83,31 @@ def train_model(config):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(my_model.parameters(), config["lr"])
 
-    #check point:
-    checkpoint = get_checkpoint()
-    if checkpoint:
-        with checkpoint.as_directory() as checkpoint_dir:
-            data_path = Path(checkpoint_dir) / "data.pkl"
-            with open(data_path, "rb") as fp:
-                checkpoint_state = pickle.load(fp)
-            my_model.load_state_dict(checkpoint_state["net_state_dict"])
-            optimizer.load_state_dict(checkpoint_state["optimizer_state_dict"])
-    
-
     for epoch in range(config["epochs"]):
         print(f"Epoch {epoch+1}/{config['epochs']}")
         train_single_epoch(my_model, train_loader, criterion, optimizer, device)
         with torch.no_grad():
              val_acc, val_loss = eval_single_epoch(my_model, val_loader, criterion, device)
+    
+        checkpoint_data = {
+            "epoch": epoch,
+            "net_state_dict": my_model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        }
 
-    checkpoint_data = {
-        "epoch": epoch,
-        "net_state_dict": my_model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-    }
-    with tempfile.TemporaryDirectory() as checkpoint_dir:
-        data_path = Path(checkpoint_dir) / "data.pkl"
-        with open(data_path, "wb") as fp:
-            pickle.dump(checkpoint_data, fp)
-        checkpoint = Checkpoint.from_directory(checkpoint_dir)
-        train.report(
-            {"loss": val_loss, "accuracy": val_acc},
-            checkpoint=checkpoint,
-        )
+        with tempfile.TemporaryDirectory() as checkpoint_dir:
+            data_path = Path(checkpoint_dir) / "data.pkl"
+            print("Data ",data_path) 
+            with open(data_path, "wb") as fp:
+                pickle.dump(checkpoint_data, fp)
+            checkpoint = Checkpoint.from_directory(checkpoint_dir)
 
+            # Stores the checkpoint to the ray tune home directory (eg /home/user/ray_results/<params_run>/checkpoint_xx)
+            train.report(
+                {"loss": val_loss, "accuracy": val_acc},
+                checkpoint=checkpoint,
+            )
+    
     print("Finished Training")
 
 def test_model(config, model, test_dataset, device):
@@ -136,8 +129,8 @@ if __name__ == "__main__":
 
 
     config = {
-        "epochs": tune.choice([100]),
-        "batch_size": tune.choice([64]),
+        "epochs": tune.choice([100, 150, 200]),
+        "batch_size": tune.choice([30, 60, 90, 120]),
         "images_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/data/data/",
         "labels_path": "/home/anadal/workspace/aidl-2025-winter-mlops/session-2/archive/chinese_mnist.csv",
         "features" : 4096,
@@ -160,6 +153,7 @@ if __name__ == "__main__":
     
     best_trial = analysis.get_best_trial("loss", "min", "last")
     print(f"Best trial config: {best_trial.config}")
+    print(f"Best trial path: {best_trial.path}")
     print(f"Best trial final validation loss: {best_trial.last_result['loss']}")
     print(f"Best trial final validation accuracy: {best_trial.last_result['accuracy']}")
     
@@ -167,14 +161,16 @@ if __name__ == "__main__":
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     best_trained_model  = MyModel(config['features'], best_trial.config['hidden_layers'], config['outputs']).to(device)
     
+    # Takes the best parameters for the best configuration. These were stored in the epochs loop previously.
     best_checkpoint = analysis.get_best_checkpoint(trial=best_trial, metric="loss", mode="min")
     with best_checkpoint.as_directory() as checkpoint_dir:
         data_path = Path(checkpoint_dir) / "data.pkl"
+        print("BEST CHECKPOINT DIR: ", data_path)
         with open(data_path, "rb") as fp:
             best_checkpoint_data = pickle.load(fp)
 
         best_trained_model.load_state_dict(best_checkpoint_data["net_state_dict"])
-
+    
     train_dataset, val_dataset, test_dataset = load_datasets(best_trial.config)
     test_acc = test_model(best_trial.config, best_trained_model, test_dataset, device)
     print("Best trial test set accuracy: {}".format(test_acc))
